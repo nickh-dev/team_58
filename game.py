@@ -40,7 +40,7 @@ class Game:
             self.target_number = int(self.entry.get())
             if self.target_number < 25 or self.target_number > 40:
                 messagebox.showerror(
-                    "Error", "Please choose a number between 25 and 40.")
+                    "Error", "Choose a number between 25 and 40")
                 return
             self.current_number = 1
             self.computer_points = 0
@@ -51,7 +51,7 @@ class Game:
             self.start_button.config(state="disabled")
             self.entry.config(state="disabled")
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid number.")
+            messagebox.showerror("Error", "Please enter a valid number")
 
     def update_points_ui(self):
         self.player_points_label.config(
@@ -74,7 +74,7 @@ class Game:
         elif self.computer_points > self.player_points:
             self.result_label.config(text="Computer wins!")
         else:
-            self.result_label.config(text="It's a tie!")
+            self.result_label.config(text="Tie!")
 
         self.reset_button.config(state="normal")
 
