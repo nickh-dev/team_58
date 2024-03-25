@@ -1,4 +1,4 @@
-﻿import pygame
+import pygame
 import sys
 import random
 
@@ -193,7 +193,7 @@ def game_loop(start_number):
             current_number = new_number
             player_points += points
             game_bank += bank
-            is_player_turn = False
+            
 
         # Логика хода ИИ
         elif not is_player_turn and current_number < 5000:  # Проверяем, что игра не окончена
@@ -205,20 +205,20 @@ def game_loop(start_number):
             current_number = new_number
             ai_points += points
             game_bank += bank
-            is_player_turn = True
+            
 
         # Проверка на окончание игры
         if current_number >= 5000:
-            # Прибавляем очки из банка к последнему игроку, сделавшему ход
-            if is_player_turn:
-                # Если последний ход сделал игрок
+            if not is_player_turn:
                 player_points += game_bank
-                log_messages.append(f"Game over: player reached {current_number}. Bank points ({game_bank}) added to player.")
+                log_messages.append(f"Game over: AI reached {current_number}. Bank points ({game_bank}) added to player.")
             else:
-                # Если последний ход сделал ИИ
                 ai_points += game_bank
-                log_messages.append(f"Game over: AI reached {current_number}. Bank points ({game_bank}) added to AI.")
+                log_messages.append(f"Game over: Player reached {current_number}. Bank points ({game_bank}) added to AI.")
             break
+
+        # Смена очереди хода только если игра не закончилась
+        is_player_turn = not is_player_turn
 
     display_end_game_screen(player_points, ai_points, game_bank, log_messages)  
 
