@@ -1,4 +1,4 @@
-﻿import pygame 
+import pygame 
 import sys
 import random
 
@@ -27,7 +27,7 @@ def draw_button(text, position, active_color, inactive_color):
 
     button_rect = pygame.Rect(position[0], position[1], 150, 50)  
     pygame.draw.ellipse(screen, inactive_color if button_rect.collidepoint(mouse) else active_color, button_rect)  
-    pygame.draw.rect(screen, inactive_color if button_rect.collidepoint(mouse) else active_color, button_rect)  # Основное тело кнопки
+    pygame.draw.rect(screen, inactive_color if button_rect.collidepoint(mouse) else active_color, button_rect)  
 
     text_surf = font.render(text, True, BLACK)
     text_rect = text_surf.get_rect(center=(position[0] + 75, position[1] + 25))  
@@ -38,15 +38,26 @@ def draw_button(text, position, active_color, inactive_color):
 
 def main_menu():
     screen.fill(DARK_GREY)  
+    chosen_algorithm = None 
     running = True
     while running:
-        start_button_clicked = draw_button('START', (325, 250), BUTTON_COLOR, BUTTON_HOVER_COLOR)
-        quit_button_clicked = draw_button('EXIT', (325, 350), BUTTON_COLOR, BUTTON_HOVER_COLOR)
+        start_button_clicked = draw_button('START', (325, 100), BUTTON_COLOR, BUTTON_HOVER_COLOR)
+        quit_button_clicked = draw_button('EXIT', (325, 550), BUTTON_COLOR, BUTTON_HOVER_COLOR)
 
-        if start_button_clicked:
+        
+        if draw_button('Minimax', (325, 250), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+            chosen_algorithm = "minimax"
+        elif draw_button('Alpha-Beta', (325, 350), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+            chosen_algorithm = "alphabeta"
+        elif draw_button('Random', (325, 450), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+            chosen_algorithm = "random"
+
+        
+        if start_button_clicked and chosen_algorithm is not None:
             start_number = start_menu()
-            game_loop(start_number)
+            game_loop(start_number, chosen_algorithm)  
             running = False
+
         if quit_button_clicked:
             pygame.quit()
             sys.exit()
@@ -103,7 +114,7 @@ def display_end_game_screen(player_points, ai_points, game_bank, log_messages):
     result_msg = font.render(result_text, True, WHITE)
     screen.blit(result_msg, (screen_width // 2 - result_msg.get_width() // 2, 20))
 
-    # Вывод лога ниже результатов
+    
     log_start_y = 60
     for i, log_message in enumerate(log_messages[-15:], start=1):  
         log_text = font.render(log_message, True, WHITE)
@@ -122,12 +133,12 @@ def display_end_game_screen(player_points, ai_points, game_bank, log_messages):
 
                     
 def evaluate(number):
-    # Примерная оценочная функция
+    
     if number >= 5000:
-        return float('inf')  # Максимально положительное значение для победы
+        return float('inf')  
     else:
-        return -abs(5000 - number)  # Приближение к 5000 считается положительным
-
+        return -abs(5000 - number)  
+    
 def minimax(number, depth, is_maximizing):
     if number >= 5000 or depth == 0:
         return evaluate(number), None
@@ -153,14 +164,46 @@ def minimax(number, depth, is_maximizing):
                 best_move = multiplier
         return best_score, best_move
     
+def alphabeta(number, depth, alpha, beta, is_maximizing):
+    if number >= 5000 or depth == 0:
+        return evaluate(number), None
 
-def game_loop(start_number):
+    if is_maximizing:
+        best_score = float('-inf')
+        best_move = None
+        for multiplier in [2, 3, 4]:
+            new_number = number * multiplier
+            score, _ = alphabeta(new_number, depth-1, alpha, beta, False)
+            if score > best_score:
+                best_score = score
+                best_move = multiplier
+            alpha = max(alpha, score)
+            if beta <= alpha:
+                break  
+        return best_score, best_move
+    else:
+        best_score = float('inf')
+        best_move = None
+        for multiplier in [2, 3, 4]:
+            new_number = number * multiplier
+            score, _ = alphabeta(new_number, depth-1, alpha, beta, True)
+            if score < best_score:
+                best_score = score
+                best_move = multiplier
+            beta = min(beta, score)
+            if beta <= alpha:
+                break  
+        return best_score, best_move
+
+    
+
+def game_loop(start_number,algorithm):
     current_number = start_number
     player_points = 0
     ai_points = 0
     game_bank = 0
     is_player_turn = True
-
+    algorithm_name = "Minimax" if algorithm == "minimax" else "Alpha-Beta" if algorithm == "alphabeta" else "Random"
     
     log_messages = []
 
@@ -169,7 +212,7 @@ def game_loop(start_number):
         screen.fill(BLACK)
 
         # Tekst
-        info_text = font.render(f'Pionts: {current_number} || Player: {player_points} | AI:{ai_points} || Bank {game_bank}', True, WHITE)
+        info_text = font.render(f'Pionts: {current_number} || Player: {player_points} | AI: {ai_points} ({algorithm_name}) || Bank {game_bank}', True, WHITE)
         screen.blit(info_text, (50, 50))
 
         # log
@@ -178,14 +221,14 @@ def game_loop(start_number):
             log_text = font.render(message, True, WHITE)
             screen.blit(log_text, (50, log_y_start))
             log_y_start += 30
-
+        # Player
         if is_player_turn and current_number < 5000:  
             
             choice_made = False
             while not choice_made:
                 screen.fill(BLACK)  
                 
-                # Повторно отрисовываем информацию о текущем состоянии игры
+                
                 screen.blit(info_text, (50, 50))
                 log_y_start = 500
                 for message in log_messages[-5:]:
@@ -198,19 +241,19 @@ def game_loop(start_number):
                         pygame.quit()
                         sys.exit()
 
-                # Вертикальное расположение кнопок
-                button_y_offset = 0  # Начальное смещение для первой кнопки
-                button_spacing = 55  # Расстояние между кнопками
+               
+                button_y_offset = 0  
+                button_spacing = 55  
                 
                 if draw_button('2', (screen_width // 2 - 75, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR):
                     multiplier = 2
                     choice_made = True
-                button_y_offset += button_spacing  # Смещаем позицию следующей кнопки
+                button_y_offset += button_spacing  
                 
                 if draw_button('3', (screen_width // 2 - 75, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR):
                     multiplier = 3
                     choice_made = True
-                button_y_offset += button_spacing  # Смещаем позицию следующей кнопки
+                button_y_offset += button_spacing  
                 
                 if draw_button('4', (screen_width // 2 - 75, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR):
                     multiplier = 4
@@ -218,7 +261,7 @@ def game_loop(start_number):
 
                 pygame.display.flip()
 
-            # Применение выбора игрока
+           
             new_number = current_number * multiplier
             points, bank = update_points_and_bank(new_number)
             log_messages.append(f"Player {multiplier}, Rezult: {new_number} (P: {points}, Bank: {bank})")
@@ -227,11 +270,14 @@ def game_loop(start_number):
             game_bank += bank
             
 
-        # Логика хода ИИ
-        elif not is_player_turn and current_number < 5000:  # Проверяем, что игра не окончена
-            pygame.time.wait(500)  # Пауза для ИИ
-            _, multiplier = minimax(current_number, 100, True)  # Использование минимакса для выбора множителя
-            if multiplier is None:  # Если минимакс не возвращает множитель, используем резервный
+        #AI
+        elif not is_player_turn and current_number < 5000:  
+            pygame.time.wait(500)  
+            if algorithm == "minimax":
+                _, multiplier = minimax(current_number, 3, True)
+            elif algorithm == "alphabeta":
+                _, multiplier = alphabeta(current_number, 3, float('-inf'), float('inf'), True)
+            elif algorithm == "random":
                 multiplier = random.choice([2, 3, 4])
             new_number = current_number * multiplier
             points, bank = update_points_and_bank(new_number)
@@ -241,7 +287,7 @@ def game_loop(start_number):
             game_bank += bank
             
 
-        # Проверка на окончание игры
+        
         if current_number >= 5000:
             if not is_player_turn:
                 ai_points += game_bank
@@ -251,7 +297,7 @@ def game_loop(start_number):
                 log_messages.append(f"Game over: Player reached {current_number}. Bank points ({game_bank}) added to Player.")
             break
 
-        # Смена очереди хода только если игра не закончилась
+       
         is_player_turn = not is_player_turn
 
     display_end_game_screen(player_points, ai_points, game_bank, log_messages)  
