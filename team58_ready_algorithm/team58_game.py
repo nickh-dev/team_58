@@ -1,63 +1,52 @@
-﻿import pygame 
+﻿import pygame
 import sys
 import random
 
 pygame.init()
 
-screen_width, screen_height = 800, 900
+screen_width, screen_height = 850, 900
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Game with Alpha-Beta Pruning')
 
-# Define colors
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-LIGHT_GREY = (200, 70, 200)
-DARK_GREY = (30, 30, 30)
-BUTTON_COLOR = (160, 160, 160)
-BUTTON_HOVER_COLOR = (230, 230, 230)
+BACKGROUND_COLOR = (41, 47, 54)
+BUTTON_COLOR = (255, 87, 34)
+BUTTON_HOVER_COLOR = (255, 138, 101)
+TEXT_COLOR = (255, 255, 255)
+SHADOW_COLOR = (0, 0, 0, 100)
+
 font = pygame.font.Font(None, 36)
 
-
-
-
-#Draws a button with text on the screen and detects clicks
-def draw_button(text, position, active_color, inactive_color):
-
+def draw_button(text, position, active_color, inactive_color, screen):
     mouse = pygame.mouse.get_pos()
     click = pygame.mouse.get_pressed()
 
-    button_rect = pygame.Rect(position[0], position[1], 150, 50)  
-    pygame.draw.ellipse(screen, inactive_color if button_rect.collidepoint(mouse) else active_color, button_rect)  
-    pygame.draw.rect(screen, inactive_color if button_rect.collidepoint(mouse) else active_color, button_rect)  # Основное тело кнопки
+    button_rect = pygame.Rect(position[0], position[1], 200, 80)
+    shadow_rect = button_rect.move(6, 6)
+    pygame.draw.rect(screen, SHADOW_COLOR, shadow_rect)
+    pygame.draw.rect(screen, inactive_color if button_rect.collidepoint(mouse) else active_color, button_rect, border_radius=10)  # Main body of button with rounded corners
 
-    text_surf = font.render(text, True, BLACK)
-    text_rect = text_surf.get_rect(center=(position[0] + 75, position[1] + 25))  
+    text_surf = font.render(text, True, TEXT_COLOR)
+    text_rect = text_surf.get_rect(center=button_rect.center)  # Center text
     screen.blit(text_surf, text_rect)
 
     return button_rect.collidepoint(mouse) and click[0] == 1
 
 
-
-#Displays the main menu and handles the algorithm selection.
 def main_menu():
-    screen.fill(DARK_GREY)  
-    chosen_algorithm = None  
+    chosen_algorithm = None
     running = True
     while running:
-        start_button_clicked = draw_button('START', (325, 100), BUTTON_COLOR, BUTTON_HOVER_COLOR)
-        quit_button_clicked = draw_button('EXIT', (325, 550), BUTTON_COLOR, BUTTON_HOVER_COLOR)
+        screen.fill(BACKGROUND_COLOR)
+        start_button_clicked = draw_button('START', (screen_width // 2 - 100, 100), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen)
+        quit_button_clicked = draw_button('EXIT', (screen_width // 2 - 100, 200), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen)
 
-        
-        if draw_button('Minimax', (325, 250), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+        if draw_button('Minimax', (screen_width // 2 - 100, 300), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
             chosen_algorithm = "minimax"
-        elif draw_button('Alpha-Beta', (325, 350), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+        elif draw_button('Alpha-Beta', (screen_width // 2 - 100, 400), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
             chosen_algorithm = "alphabeta"
-        elif draw_button('Random', (325, 450), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+        elif draw_button('Random', (screen_width // 2 - 100, 500), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
             chosen_algorithm = "random"
 
-        
         if start_button_clicked and chosen_algorithm is not None:
             start_number = start_menu()
             game_loop(start_number, chosen_algorithm)
@@ -77,13 +66,13 @@ def main_menu():
 
 #Allows the player to choose a starting number
 def start_menu():
-    input_number = ''  
+    input_number = ''
     running = True
     while running:
-        screen.fill(BLACK)
-        title_text = font.render('Choose a starting number (25 to 40): ' + input_number, True, WHITE)
-        screen.blit(title_text, (200, 250))
-        
+        screen.fill(BACKGROUND_COLOR)
+        title_text = font.render('Choose a starting number (25 to 40): ' + input_number, True, TEXT_COLOR)
+        screen.blit(title_text, (screen_width // 2 - 250, 300))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -99,7 +88,7 @@ def start_menu():
                 else:
                     if event.unicode.isdigit() and len(input_number) < 2:
                         input_number += event.unicode
-        
+
         pygame.display.flip()
 
 #Calculates points and updates the bank based on the current number.
@@ -110,23 +99,23 @@ def update_points_and_bank(number):
         points -= 1
     else:
         points += 1
-    
+
     if number % 10 == 0 or number % 10 == 5:
         bank += 1
-    
+
     return points, bank
 
 #Displays the end game screen showing final scores
 def display_end_game_screen(player_points, ai_points, game_bank, log_messages):
-    screen.fill(BLACK)
+    screen.fill(BACKGROUND_COLOR)
     result_text = f"Player points: {player_points}, AI points: {ai_points}, Bank: {game_bank}"
-    result_msg = font.render(result_text, True, WHITE)
+    result_msg = font.render(result_text, True, TEXT_COLOR)
     screen.blit(result_msg, (screen_width // 2 - result_msg.get_width() // 2, 20))
 
-    
+
     log_start_y = 60
-    for i, log_message in enumerate(log_messages[-15:], start=1):  
-        log_text = font.render(log_message, True, WHITE)
+    for i, log_message in enumerate(log_messages[-15:], start=1):
+        log_text = font.render(log_message, True, TEXT_COLOR)
         screen.blit(log_text, (50, log_start_y + i * 20))
 
     pygame.display.flip()
@@ -145,7 +134,7 @@ def display_end_game_screen(player_points, ai_points, game_bank, log_messages):
 
 
 
-#Evaluates the current state of the game for AI.                    
+#Evaluates the current state of the game for AI.
 def evaluate(number):
     if number >= 5000:
         return float('inf')
@@ -153,7 +142,7 @@ def evaluate(number):
         return -abs(5000 - number)
 
 
-# minimax algorithm    
+# minimax algorithm
 def minimax(number, depth, is_maximizing):
     if number >= 5000 or depth == 0:
         return evaluate(number), None
@@ -180,7 +169,7 @@ def minimax(number, depth, is_maximizing):
         return best_score, best_move
 
 
-# alphabeta algorithm 
+# alphabeta algorithm
 def alphabeta(number, depth, alpha, beta, is_maximizing):
     if number >= 5000 or depth == 0:
         return evaluate(number), None
@@ -196,7 +185,7 @@ def alphabeta(number, depth, alpha, beta, is_maximizing):
                 best_move = multiplier
             alpha = max(alpha, score)
             if beta <= alpha:
-                break  # Отсечение бета
+                break  # Alpha pruning
         return best_score, best_move
     else:
         best_score = float('inf')
@@ -209,10 +198,10 @@ def alphabeta(number, depth, alpha, beta, is_maximizing):
                 best_move = multiplier
             beta = min(beta, score)
             if beta <= alpha:
-                break  # Отсечение альфа
+                break  # Beta pruning
         return best_score, best_move
 
-    
+
 
 def game_loop(start_number,algorithm):
     current_number = start_number
@@ -221,35 +210,34 @@ def game_loop(start_number,algorithm):
     game_bank = 0
     is_player_turn = True
     algorithm_name = "Minimax" if algorithm == "minimax" else "Alpha-Beta" if algorithm == "alphabeta" else "Random"
-    
+
     log_messages = []
 
     running = True
     while running:
-        screen.fill(BLACK)
+        screen.fill(BACKGROUND_COLOR)
 
-        # Tekst
-        info_text = font.render(f'Pionts: {current_number} || Player: {player_points} | AI: {ai_points} ({algorithm_name}) || Bank {game_bank}', True, WHITE)
+        # Text
+        info_text = font.render(f'Points: {current_number} || Player: {player_points} | AI: {ai_points} ({algorithm_name}) || Bank {game_bank}', True, TEXT_COLOR)
         screen.blit(info_text, (50, 50))
 
-        # log
+        # Log
         log_y_start = 450
         for message in log_messages[-5:]:
-            log_text = font.render(message, True, WHITE)
+            log_text = font.render(message, True, TEXT_COLOR)
             screen.blit(log_text, (50, log_y_start))
             log_y_start += 30
-        # player turn
-        if is_player_turn and current_number < 5000:  
-            
+        # Player turn
+        if is_player_turn and current_number < 5000:
+
             choice_made = False
             while not choice_made:
-                screen.fill(BLACK)  
-                
-                
+                screen.fill(BACKGROUND_COLOR)
+
                 screen.blit(info_text, (50, 50))
                 log_y_start = 500
                 for message in log_messages[-5:]:
-                    log_text = font.render(message, True, WHITE)
+                    log_text = font.render(message, True, TEXT_COLOR)
                     screen.blit(log_text, (50, log_y_start))
                     log_y_start += 30
 
@@ -258,38 +246,36 @@ def game_loop(start_number,algorithm):
                         pygame.quit()
                         sys.exit()
 
-                
-                button_y_offset = 0  
-                button_spacing = 55  
-                
-                if draw_button('2', (screen_width // 2 - 75, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+                button_y_offset = 0
+                button_spacing = 90  # Increased spacing between buttons
+
+                if draw_button('x2', (150, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
                     multiplier = 2
                     choice_made = True
-                button_y_offset += button_spacing  
-                
-                if draw_button('3', (screen_width // 2 - 75, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+                button_y_offset += button_spacing
+
+                if draw_button('x3', (350, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
                     multiplier = 3
                     choice_made = True
-                button_y_offset += button_spacing  
-                
-                if draw_button('4', (screen_width // 2 - 75, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR):
+                button_y_offset += button_spacing
+
+                if draw_button('x4', (550, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
                     multiplier = 4
                     choice_made = True
 
                 pygame.display.flip()
 
-            
             new_number = current_number * multiplier
             points, bank = update_points_and_bank(new_number)
-            log_messages.append(f"Player {multiplier}, Rezult: {new_number} (P: {points}, Bank: {bank})")
+            log_messages.append(f"Player x{multiplier}, Result: {new_number} (P: {points}, Bank: {bank})")
             current_number = new_number
             player_points += points
             game_bank += bank
-            
+
 
         # AI turn
-        elif not is_player_turn and current_number < 5000: 
-            pygame.time.wait(500)  # pause to avoid errors and misclicks
+        elif not is_player_turn and current_number < 5000:
+            pygame.time.wait(500)  # Pause to avoid errors and misclicks
             if algorithm == "minimax":
                 _, multiplier = minimax(current_number, 3, True)
             elif algorithm == "alphabeta":
@@ -298,13 +284,13 @@ def game_loop(start_number,algorithm):
                 multiplier = random.choice([2, 3, 4])
             new_number = current_number * multiplier
             points, bank = update_points_and_bank(new_number)
-            log_messages.append(f"AI  {multiplier}, Result: {new_number} (P: {points}, Bank: {bank})")
+            log_messages.append(f"AI x{multiplier}, Result: {new_number} (P: {points}, Bank: {bank})")
             current_number = new_number
             ai_points += points
             game_bank += bank
-            
 
-        # check for end
+
+        # Check for end
         if current_number >= 5000:
             if not is_player_turn:
                 ai_points += game_bank
@@ -317,7 +303,7 @@ def game_loop(start_number,algorithm):
         # If the game continues, the turn changes
         is_player_turn = not is_player_turn
 
-    display_end_game_screen(player_points, ai_points, game_bank, log_messages)  
+    display_end_game_screen(player_points, ai_points, game_bank, log_messages)
 
 
 
