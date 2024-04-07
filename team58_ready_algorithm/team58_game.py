@@ -247,19 +247,19 @@ def game_loop(start_number,algorithm):
                         sys.exit()
 
                 button_y_offset = 0
-                button_spacing = 90  # Increased spacing between buttons
+                button_spacing = 100  # Increased spacing between buttons
 
-                if draw_button('x2', (150, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
+                if draw_button('x2', (350, 150 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
                     multiplier = 2
                     choice_made = True
                 button_y_offset += button_spacing
 
-                if draw_button('x3', (350, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
+                if draw_button('x3', (350, 150 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
                     multiplier = 3
                     choice_made = True
                 button_y_offset += button_spacing
 
-                if draw_button('x4', (550, 300 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
+                if draw_button('x4', (350, 150 + button_y_offset), BUTTON_COLOR, BUTTON_HOVER_COLOR, screen):
                     multiplier = 4
                     choice_made = True
 
