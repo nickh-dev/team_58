@@ -146,11 +146,9 @@ def display_end_game_screen(player_points, ai_points, game_bank, log_messages):
 
 #Evaluates the current state of the game for AI.                    
 def evaluate(current_number, ai_points, player_points, game_bank):
-    # Ваша оценочная функция
     if current_number >= 5000:
-        return float('inf')  # Максимальное значение для победы
+        return float('inf')
     else:
-        # Примерная реализация оценочной функции с учетом текущего состояния игры
         A = 1
         B = 1
         C = 0.001
@@ -197,32 +195,28 @@ def alphabeta(number, depth, alpha, beta, ai_points, player_points, game_bank, i
         best_move = None
         for multiplier in [2, 3, 4]:
             new_number = number * multiplier
-            # Предполагаем, что функция update_points_and_bank возвращает изменение очков ИИ и изменение банка
             new_ai_points, new_game_bank = update_points_and_bank(new_number)  
-            # Обновляем очки ИИ и банка для следующего состояния
             score, _ = alphabeta(new_number, depth-1, alpha, beta, ai_points + new_ai_points, player_points, game_bank + new_game_bank, False)
             if score > best_score:
                 best_score = score
                 best_move = multiplier
             alpha = max(alpha, score)
             if beta <= alpha:
-                break  # Применение альфа-обрезки
+                break  
         return best_score, best_move
     else:
         best_score = float('inf')
         best_move = None
         for multiplier in [2, 3, 4]:
             new_number = number * multiplier
-            # Аналогично предполагаем изменение очков игрока и банка
             new_player_points, new_game_bank = update_points_and_bank(new_number)
-            # Обновляем очки игрока и банка для следующего состояния
             score, _ = alphabeta(new_number, depth-1, alpha, beta, ai_points, player_points + new_player_points, game_bank + new_game_bank, True)
             if score < best_score:
                 best_score = score
                 best_move = multiplier
             beta = min(beta, score)
             if beta <= alpha:
-                break  # Применение бета-обрезки
+                break 
         return best_score, best_move
 
 
