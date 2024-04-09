@@ -1,4 +1,4 @@
-﻿import pygame 
+import pygame 
 import sys
 import random
 
@@ -29,7 +29,7 @@ def draw_button(text, position, active_color, inactive_color, screen):
     pygame.draw.rect(screen, inactive_color if button_rect.collidepoint(mouse) else active_color, button_rect, border_radius=10)  # Main body of button with rounded corners
 
     text_surf = font.render(text, True, TEXT_COLOR)
-    text_rect = text_surf.get_rect(center=button_rect.center)  # Center text
+    text_rect = text_surf.get_rect(center=button_rect.center)
     screen.blit(text_surf, text_rect)
 
     return button_rect.collidepoint(mouse) and click[0] == 1
@@ -144,87 +144,116 @@ def display_end_game_screen(player_points, ai_points, game_bank, log_messages):
 
 
 
+class Node:
+    def __init__(self, current_number, ai_points, player_points, game_bank, depth, is_maximizing, multiplier=None,is_ai_turn=True):
+        self.current_number = current_number #The current number in the game state
+        self.ai_points = ai_points #The AI's points.
+        self.player_points = player_points #The player's points. 
+        self.game_bank = game_bank # Bank points
+        self.depth = depth #depth of this node in the game tree
+        self.is_maximizing = is_maximizing #goal at this node is to maximize points (AI's turn) or minimize (player's turn).
+        self.multiplier = multiplier #multiplier, used to modify calculations in the game logic.
+        self.children = [] # children list
+        self.is_ai_turn = is_ai_turn # Indicates if it's currently the AI's turn at this game state.
+    def add_child(self, child):
+        self.children.append(child) #add a child Node to the children list, forming parent-child relationships in the tree structure.
 
 
 
 #Evaluates the current state of the game for AI.                    
-def evaluate(current_number, ai_points, player_points, game_bank):
+def evaluate(current_number, ai_points, player_points, game_bank,  is_ai_turn):
+    A = 1
+    B = 1
+    C = 0.001
+    base_score = A * (ai_points - player_points) + B * game_bank - C * abs(5000 - current_number)
+
     if current_number >= 5000:
-        return float('inf')
+        return float('inf') if is_ai_turn else float('-inf')
     else:
-        A = 1
-        B = 1
-        C = 0.001
-        return A * (ai_points - player_points) + B * game_bank - C * abs(5000 - current_number)
+        return base_score
+
 
 
 
 # minimax algorithm    
-def minimax(number, depth, ai_points, player_points, game_bank, is_maximizing):
-    if number >= 5000 or depth == 0:
-        return evaluate(number, ai_points, player_points, game_bank), None
+def minimax(node, depth, is_maximizing):
+    if node.current_number >= 5000 or depth == 0:
+        score = evaluate(node.current_number, node.ai_points, node.player_points, node.game_bank,  node.is_ai_turn)
 
+        #print(f"Minimax: Depth {depth}, Score: {score}, Maximizing: {is_maximizing}")
+        return score, None
+    
     if is_maximizing:
         best_score = float('-inf')
         best_move = None
         for multiplier in [2, 3, 4]:
-            new_number = number * multiplier
-            new_ai_points, new_game_bank = update_points_and_bank(new_number)
-            score, _ = minimax(new_number, depth-1, ai_points + new_ai_points, player_points, game_bank + new_game_bank, False)
+            new_number = node.current_number * multiplier
+            points, bank = update_points_and_bank(new_number)
+            new_node = Node(new_number, node.ai_points + points, node.player_points, node.game_bank + bank, node.depth + 1, False, multiplier)
+            print(f"Minimax: Creating node at depth {new_node.depth} with current_number {new_node.current_number}, ai_points {new_node.ai_points}, player_points {new_node.player_points}, game_bank {new_node.game_bank}, is_maximizing {new_node.is_maximizing}, multiplier {new_node.multiplier}")
+            score, _ = minimax(new_node, depth-1, False)
             if score > best_score:
                 best_score = score
                 best_move = multiplier
+        print(f"Minimax: Depth {depth}, Best Score: {best_score}, Best Move: {best_move}, Maximizing: {is_maximizing}")
         return best_score, best_move
     else:
         best_score = float('inf')
         best_move = None
         for multiplier in [2, 3, 4]:
-            new_number = number * multiplier
-            new_player_points, new_game_bank = update_points_and_bank(new_number)
-            score, _ = minimax(new_number, depth-1, ai_points, player_points + new_player_points, game_bank + new_game_bank, True)
+            new_number = node.current_number * multiplier
+            points, bank = update_points_and_bank(new_number)
+            new_node = Node(new_number, node.ai_points, node.player_points + points, node.game_bank + bank, node.depth + 1, True, multiplier)
+            score, _ = minimax(new_node, depth-1, True)
             if score < best_score:
                 best_score = score
                 best_move = multiplier
+        print(f"Minimax: Depth {depth}, Best Score: {best_score}, Best Move: {best_move}, Maximizing: {is_maximizing}")
         return best_score, best_move
+    
+
 
 
 # alphabeta algorithm 
-def alphabeta(number, depth, alpha, beta, ai_points, player_points, game_bank, is_maximizing):
-    if number >= 5000 or depth == 0:
-        return evaluate(number, ai_points, player_points, game_bank), None
-
+def alphabeta(node, depth, alpha, beta, is_maximizing):
+    if node.current_number >= 5000 or depth == 0:
+        score = evaluate(node.current_number, node.ai_points, node.player_points, node.game_bank, node.is_ai_turn)
+        return score, None
     if is_maximizing:
         best_score = float('-inf')
         best_move = None
         for multiplier in [2, 3, 4]:
-            new_number = number * multiplier
-            new_ai_points, new_game_bank = update_points_and_bank(new_number)  
-            score, _ = alphabeta(new_number, depth-1, alpha, beta, ai_points + new_ai_points, player_points, game_bank + new_game_bank, False)
+            new_number = node.current_number * multiplier
+            points, bank = update_points_and_bank(new_number)
+            new_node = Node(new_number, node.ai_points + points, node.player_points, node.game_bank + bank, node.depth + 1, False, multiplier)
+            #print(f"AlphaBeta: Creating node at depth {new_node.depth} with current_number {new_node.current_number}, ai_points {new_node.ai_points}, player_points {new_node.player_points}, game_bank {new_node.game_bank}, is_maximizing {new_node.is_maximizing}, multiplier {new_node.multiplier}")
+            score, _ = alphabeta(new_node, depth-1, alpha, beta, False)
             if score > best_score:
                 best_score = score
                 best_move = multiplier
             alpha = max(alpha, score)
             if beta <= alpha:
-                break  
+                break
         return best_score, best_move
     else:
         best_score = float('inf')
         best_move = None
         for multiplier in [2, 3, 4]:
-            new_number = number * multiplier
-            new_player_points, new_game_bank = update_points_and_bank(new_number)
-            score, _ = alphabeta(new_number, depth-1, alpha, beta, ai_points, player_points + new_player_points, game_bank + new_game_bank, True)
+            new_number = node.current_number * multiplier
+            points, bank = update_points_and_bank(new_number)
+            new_node = Node(new_number, node.ai_points, node.player_points + points, node.game_bank + bank, node.depth + 1, True, multiplier)
+            score, _ = alphabeta(new_node, depth-1, alpha, beta, True)
             if score < best_score:
                 best_score = score
                 best_move = multiplier
             beta = min(beta, score)
             if beta <= alpha:
-                break 
+                break
         return best_score, best_move
 
 
     
-
+#game field
 def game_loop(start_number,algorithm):
     current_number = start_number
     player_points = 0
@@ -299,13 +328,16 @@ def game_loop(start_number,algorithm):
             
 
         # AI turn
-        elif not is_player_turn and current_number < 5000: 
+        elif not is_player_turn and current_number < 5000:
+            initial_node = Node(current_number, ai_points, player_points, game_bank, 0, True)
+
             if algorithm == "minimax":
-                _, multiplier = minimax(current_number, 3, ai_points, player_points, game_bank, True)
+                _, multiplier = minimax(initial_node, 2, True)
             elif algorithm == "alphabeta":
-                _, multiplier = alphabeta(current_number, 3, float('-inf'), float('inf'), ai_points, player_points, game_bank, True)
+                _, multiplier = alphabeta(initial_node, 2, float('-inf'), float('inf'), True)
             elif algorithm == "random":
                 multiplier = random.choice([2, 3, 4])
+
             new_number = current_number * multiplier
             points, bank = update_points_and_bank(new_number)
             log_messages.append(f"AI  x{multiplier}, Result: {new_number} (P: {points}, Bank: {bank})")
