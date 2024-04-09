@@ -1,6 +1,7 @@
 import pygame 
 import sys
 import random
+import time
 
 pygame.init()
 
@@ -138,13 +139,13 @@ def display_end_game_screen(player_points, ai_points, game_bank, log_messages):
 
         pygame.display.flip()
 
-    main_menu()  # Перезапуск игры после выхода из цикла
+    main_menu()
 
 
 
 
 
-class Node:
+class Node: #dinamiska atmina
     def __init__(self, current_number, ai_points, player_points, game_bank, depth, is_maximizing, multiplier=None,is_ai_turn=True):
         self.current_number = current_number #The current number in the game state
         self.ai_points = ai_points #The AI's points.
@@ -176,12 +177,13 @@ def evaluate(current_number, ai_points, player_points, game_bank,  is_ai_turn):
 
 
 # minimax algorithm    
-def minimax(node, depth, is_maximizing):
+def minimax(node, depth, is_maximizing, visited_nodes=0):
+    visited_nodes += 1
     if node.current_number >= 5000 or depth == 0:
         score = evaluate(node.current_number, node.ai_points, node.player_points, node.game_bank,  node.is_ai_turn)
 
         #print(f"Minimax: Depth {depth}, Score: {score}, Maximizing: {is_maximizing}")
-        return score, None
+        return score, None, visited_nodes
     
     if is_maximizing:
         best_score = float('-inf')
@@ -190,13 +192,13 @@ def minimax(node, depth, is_maximizing):
             new_number = node.current_number * multiplier
             points, bank = update_points_and_bank(new_number)
             new_node = Node(new_number, node.ai_points + points, node.player_points, node.game_bank + bank, node.depth + 1, False, multiplier)
-            print(f"Minimax: Creating node at depth {new_node.depth} with current_number {new_node.current_number}, ai_points {new_node.ai_points}, player_points {new_node.player_points}, game_bank {new_node.game_bank}, is_maximizing {new_node.is_maximizing}, multiplier {new_node.multiplier}")
-            score, _ = minimax(new_node, depth-1, False)
+            #print(f"Minimax: Creating node at depth {new_node.depth} with current_number {new_node.current_number}, ai_points {new_node.ai_points}, player_points {new_node.player_points}, game_bank {new_node.game_bank}, is_maximizing {new_node.is_maximizing}, multiplier {new_node.multiplier}")
+            score, _, visited_nodes = minimax(new_node, depth-1, False, visited_nodes)
             if score > best_score:
                 best_score = score
                 best_move = multiplier
-        print(f"Minimax: Depth {depth}, Best Score: {best_score}, Best Move: {best_move}, Maximizing: {is_maximizing}")
-        return best_score, best_move
+        #print(f"Minimax: Depth {depth}, Best Score: {best_score}, Best Move: {best_move}, Maximizing: {is_maximizing}")
+        return best_score, best_move, visited_nodes
     else:
         best_score = float('inf')
         best_move = None
@@ -204,21 +206,22 @@ def minimax(node, depth, is_maximizing):
             new_number = node.current_number * multiplier
             points, bank = update_points_and_bank(new_number)
             new_node = Node(new_number, node.ai_points, node.player_points + points, node.game_bank + bank, node.depth + 1, True, multiplier)
-            score, _ = minimax(new_node, depth-1, True)
+            score, _, visited_nodes = minimax(new_node, depth-1, True, visited_nodes) 
             if score < best_score:
                 best_score = score
                 best_move = multiplier
-        print(f"Minimax: Depth {depth}, Best Score: {best_score}, Best Move: {best_move}, Maximizing: {is_maximizing}")
-        return best_score, best_move
+        #print(f"Minimax: Depth {depth}, Best Score: {best_score}, Best Move: {best_move}, Maximizing: {is_maximizing}")
+        return best_score, best_move, visited_nodes
     
 
 
 
 # alphabeta algorithm 
-def alphabeta(node, depth, alpha, beta, is_maximizing):
+def alphabeta(node, depth, alpha, beta, is_maximizing,visited_nodes=0):
+    visited_nodes += 1
     if node.current_number >= 5000 or depth == 0:
         score = evaluate(node.current_number, node.ai_points, node.player_points, node.game_bank, node.is_ai_turn)
-        return score, None
+        return score, None, visited_nodes
     if is_maximizing:
         best_score = float('-inf')
         best_move = None
@@ -227,14 +230,14 @@ def alphabeta(node, depth, alpha, beta, is_maximizing):
             points, bank = update_points_and_bank(new_number)
             new_node = Node(new_number, node.ai_points + points, node.player_points, node.game_bank + bank, node.depth + 1, False, multiplier)
             #print(f"AlphaBeta: Creating node at depth {new_node.depth} with current_number {new_node.current_number}, ai_points {new_node.ai_points}, player_points {new_node.player_points}, game_bank {new_node.game_bank}, is_maximizing {new_node.is_maximizing}, multiplier {new_node.multiplier}")
-            score, _ = alphabeta(new_node, depth-1, alpha, beta, False)
+            score, _, visited_nodes = alphabeta(new_node, depth-1, alpha, beta, False, visited_nodes)
             if score > best_score:
                 best_score = score
                 best_move = multiplier
             alpha = max(alpha, score)
             if beta <= alpha:
                 break
-        return best_score, best_move
+        return best_score, best_move, visited_nodes
     else:
         best_score = float('inf')
         best_move = None
@@ -242,14 +245,14 @@ def alphabeta(node, depth, alpha, beta, is_maximizing):
             new_number = node.current_number * multiplier
             points, bank = update_points_and_bank(new_number)
             new_node = Node(new_number, node.ai_points, node.player_points + points, node.game_bank + bank, node.depth + 1, True, multiplier)
-            score, _ = alphabeta(new_node, depth-1, alpha, beta, True)
+            score, _, visited_nodes = alphabeta(new_node, depth-1, alpha, beta, True, visited_nodes)
             if score < best_score:
                 best_score = score
                 best_move = multiplier
             beta = min(beta, score)
             if beta <= alpha:
                 break
-        return best_score, best_move
+        return best_score, best_move, visited_nodes
 
 
     
@@ -261,7 +264,7 @@ def game_loop(start_number,algorithm):
     game_bank = 0
     is_player_turn = True
     algorithm_name = "Minimax" if algorithm == "minimax" else "Alpha-Beta" if algorithm == "alphabeta" else "Random"
-    
+    ai_turn_times = []
     log_messages = []
 
     running = True
@@ -329,12 +332,13 @@ def game_loop(start_number,algorithm):
 
         # AI turn
         elif not is_player_turn and current_number < 5000:
+            start_time = time.perf_counter()  # Начало измерения времен
             initial_node = Node(current_number, ai_points, player_points, game_bank, 0, True)
 
             if algorithm == "minimax":
-                _, multiplier = minimax(initial_node, 2, True)
+                _, multiplier, visited_nodes = minimax(initial_node, 2, True)
             elif algorithm == "alphabeta":
-                _, multiplier = alphabeta(initial_node, 2, float('-inf'), float('inf'), True)
+                _, multiplier, visited_nodes = alphabeta(initial_node, 2, float('-inf'), float('inf'), True)
             elif algorithm == "random":
                 multiplier = random.choice([2, 3, 4])
 
@@ -344,7 +348,9 @@ def game_loop(start_number,algorithm):
             current_number = new_number
             ai_points += points
             game_bank += bank
-            
+            end_time = time.perf_counter()  # Конец измерения времени
+            ai_turn_time_ms = (end_time - start_time) * 1000  # Преобразование времени в миллисекунды
+            ai_turn_times.append(ai_turn_time_ms)  # Запись времени хода в список
 
         # check for end
         if current_number >= 5000:
@@ -358,13 +364,18 @@ def game_loop(start_number,algorithm):
 
         # If the game continues, the turn changes
         is_player_turn = not is_player_turn
+    avg_turn_time_ms = sum(ai_turn_times) / len(ai_turn_times) if ai_turn_times else 0
+    print(f"Average AI turn time: {avg_turn_time_ms:.5f} milliseconds")
 
+    print(f"Visited nodes: {visited_nodes}")
     display_end_game_screen(player_points, ai_points, game_bank, log_messages)  
+    
 
 
 
 
 def main():
+
     main_menu()
 
 if __name__ == "__main__":
