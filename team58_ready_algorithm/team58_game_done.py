@@ -332,7 +332,7 @@ def game_loop(start_number,algorithm):
 
         # AI turn
         elif not is_player_turn and current_number < 5000:
-            start_time = time.perf_counter()  # Начало измерения времен
+            start_time = time.perf_counter()  # time start
             initial_node = Node(current_number, ai_points, player_points, game_bank, 0, True)
 
             if algorithm == "minimax":
@@ -348,9 +348,9 @@ def game_loop(start_number,algorithm):
             current_number = new_number
             ai_points += points
             game_bank += bank
-            end_time = time.perf_counter()  # Конец измерения времени
-            ai_turn_time_ms = (end_time - start_time) * 1000  # Преобразование времени в миллисекунды
-            ai_turn_times.append(ai_turn_time_ms)  # Запись времени хода в список
+            end_time = time.perf_counter()  # time stop
+            ai_turn_time_ms = (end_time - start_time) * 1000  
+            ai_turn_times.append(ai_turn_time_ms)  
 
         # check for end
         if current_number >= 5000:
